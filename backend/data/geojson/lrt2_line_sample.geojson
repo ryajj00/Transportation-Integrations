@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lrt2_sample",
+        "name": "LRT-2 Sample (Santolan - Cubao)",
+        "mode": "train"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [121.0696, 14.6015],
+          [121.0620, 14.6100],
+          [121.0550, 14.6160],
+          [121.0493, 14.6211]
+        ]
+      }
+    }
+  ]
+}

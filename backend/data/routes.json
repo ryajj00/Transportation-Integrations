@@ -1,0 +1,9 @@
+{
+  "hubs": [
+    { "name": "Cubao (MRT/LRT hub)", "lat": 14.6211, "lng": 121.0493, "line": "train" },
+    { "name": "Santolan (LRT-2)", "lat": 14.6015, "lng": 121.0696, "line": "train" },
+    { "name": "PITX (Parañaque Intermodal)", "lat": 14.5035, "lng": 121.0300, "line": "bus" },
+    { "name": "Makati (Ayala)", "lat": 14.5547, "lng": 121.0244, "line": "train" },
+    { "name": "Antipolo (town center)", "lat": 14.5847, "lng": 121.1255, "line": "jeepney" }
+  ]
+}

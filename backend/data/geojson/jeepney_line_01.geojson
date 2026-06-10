@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "jeepney_001",
+        "name": "Antipolo - Cubao - Makati (sample)",
+        "mode": "jeepney"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [121.1255, 14.5847],
+          [121.0696, 14.6015],
+          [121.0493, 14.6211],
+          [121.0244, 14.5547],
+          [121.03, 14.5035]
+        ]
+      }
+    }
+  ]
+}
