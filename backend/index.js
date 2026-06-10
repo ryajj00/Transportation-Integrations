@@ -140,6 +140,9 @@ function haversineKm(a, b) {
   return R * c;
 }
 
+const ROUTING_ENGINE_URL = process.env.ROUTING_ENGINE_URL || null;
+const ROUTING_ENGINE = (process.env.ROUTING_ENGINE || 'mock').toLowerCase();
+
 function findNearestHub(point) {
   let best = null;
   for (const hub of routesData.hubs) {
@@ -149,13 +152,93 @@ function findNearestHub(point) {
   return best;
 }
 
-app.get('/api/plan', (req, res) => {
+async function fetchRouteFromEngine(startPt, endPt, engine = 'osrm') {
+  if (!ROUTING_ENGINE_URL) return null;
+  const baseUrl = ROUTING_ENGINE_URL.replace(/\/+$/, '');
+  try {
+    if (engine === 'osrm') {
+      const params = new URLSearchParams({ geometries: 'geojson', overview: 'simplified', steps: 'true' });
+      const url = `${baseUrl}/route/v1/driving/${startPt.lng},${startPt.lat};${endPt.lng},${endPt.lat}?${params}`;
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (!data.routes || !data.routes.length || data.code !== 'Ok') return null;
+      const route = data.routes[0];
+      return {
+        engine: 'osrm',
+        distance_km: route.distance / 1000,
+        duration_min: Math.round(route.duration / 60),
+        geometry: route.geometry,
+        raw: data
+      };
+    }
+
+    if (engine === 'valhalla') {
+      const url = `${baseUrl}/route`;
+      const body = {
+        locations: [
+          { lat: startPt.lat, lon: startPt.lng },
+          { lat: endPt.lat, lon: endPt.lng }
+        ],
+        costing: 'auto',
+        directions_options: { units: 'kilometers' }
+      };
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (!data.trip || !data.trip.summary) return null;
+      const summary = data.trip.summary;
+      return {
+        engine: 'valhalla',
+        distance_km: summary.length / 1000,
+        duration_min: Math.round(summary.time / 60),
+        geometry: data.trip.legs?.[0]?.shape ? { type: 'LineString', coordinates: data.trip.legs[0].shape } : null,
+        raw: data
+      };
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
+app.get('/api/plan', async (req, res) => {
   const { start, end } = req.query;
   if (!start || !end) return res.status(400).json({ error: 'Provide start and end as lat,lng' });
   const [sLat, sLng] = start.split(',').map(Number);
   const [eLat, eLng] = end.split(',').map(Number);
   const startPt = { lat: sLat, lng: sLng };
   const endPt = { lat: eLat, lng: eLng };
+
+  const routeEngineQuery = ((req.query.engine || ROUTING_ENGINE) || 'mock').toLowerCase();
+  let routeEngineInfo = null;
+  if (ROUTING_ENGINE_URL && routeEngineQuery !== 'mock') {
+    routeEngineInfo = await fetchRouteFromEngine(startPt, endPt, routeEngineQuery);
+  }
+
+  if (routeEngineInfo) {
+    const engineSegment = {
+      mode: 'transit',
+      from: 'origin',
+      to: 'destination',
+      distance_km: +routeEngineInfo.distance_km.toFixed(3),
+      duration_min: routeEngineInfo.duration_min,
+      fare_php: calculateFareForSegment({ mode: 'train', distance_km: routeEngineInfo.distance_km }, { rules: currentRules }),
+      route_engine: { engine: routeEngineInfo.engine, service: ROUTING_ENGINE_URL }
+    };
+    const totalFare = calculateTotalFare([engineSegment], { rules: currentRules });
+    return res.json({
+      segments: [engineSegment],
+      totalFare,
+      totalTime: engineSegment.duration_min,
+      routeEngineUsed: true,
+      routeEngine: { engine: routeEngineInfo.engine, url: ROUTING_ENGINE_URL }
+    });
+  }
 
   const nearestStart = findNearestHub(startPt);
   const nearestEnd = findNearestHub(endPt);
@@ -211,7 +294,30 @@ app.get('/api/plan', (req, res) => {
   const totalFare = calculateTotalFare(segments, { rules: currentRules });
   const totalTime = segments.reduce((s, x) => s + (x.duration_min || 0), 0);
 
-  res.json({ segments, totalFare, totalTime });
+  res.json({ segments, totalFare, totalTime, routeEngineUsed: false, routeEngineService: ROUTING_ENGINE_URL || null });
+});
+
+app.get('/api/routing', async (req, res) => {
+  const { start, end } = req.query;
+  const engine = ((req.query.engine || ROUTING_ENGINE) || 'osrm').toLowerCase();
+  if (!start || !end) return res.status(400).json({ error: 'Provide start and end as lat,lng' });
+  if (!ROUTING_ENGINE_URL) return res.status(501).json({ error: 'Routing engine not configured. Set ROUTING_ENGINE_URL' });
+  if (!['osrm', 'valhalla'].includes(engine)) return res.status(400).json({ error: 'Unsupported engine. Use osrm or valhalla' });
+
+  const [sLat, sLng] = start.split(',').map(Number);
+  const [eLat, eLng] = end.split(',').map(Number);
+  const routeResult = await fetchRouteFromEngine({ lat: sLat, lng: sLng }, { lat: eLat, lng: eLng }, engine);
+  if (!routeResult) return res.status(502).json({ error: 'Routing engine call failed or returned no route' });
+
+  res.json({
+    engine: routeResult.engine,
+    service: ROUTING_ENGINE_URL,
+    route: {
+      distance_km: +routeResult.distance_km.toFixed(3),
+      duration_min: routeResult.duration_min,
+      geometry: routeResult.geometry
+    }
+  });
 });
 
 app.get('/api/deeplink', (req, res) => {

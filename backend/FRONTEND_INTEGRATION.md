@@ -5,6 +5,7 @@ Overview
 
 Key endpoints
 - `GET /api/plan?start=LAT,LON&end=LAT,LON`: returns `{ segments: [...], totalFare, totalTime }`. Each segment may include `matched_feature` with: `file`, `properties`, `length_km` (no `geometry`).
+- `GET /api/routing?start=LAT,LON&end=LAT,LON&engine=osrm|valhalla`: optionally query an OSRM or Valhalla backend if `ROUTING_ENGINE_URL` is configured.
 - `GET /api/feature?file=FILENAME.geojson&id=FEATURE_ID`: returns `{ feature: <GeoJSON Feature> }` with full `geometry` and `properties`.
 - `GET /api/geojson`: lists available geojson files and simple metadata from `catalog.json`.
 
@@ -45,6 +46,7 @@ Security and rate limiting
 
 Data shapes reference
 - Plan response: `{"segments":[{"mode","from","to","distance_km","duration_min","fare_php","matched_feature":{"file","properties","length_km"}}],"totalFare", "totalTime"}`
+- Routing endpoint response: `{ "engine", "service", "route": { "distance_km", "duration_min", "geometry" } }`
 - Feature response: `{ "feature": <GeoJSON Feature> }`
 
 Next steps for frontend

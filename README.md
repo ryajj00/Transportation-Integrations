@@ -46,6 +46,7 @@ Server runs on `http://localhost:3000`
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/plan?start=LAT,LON&end=LAT,LON` | Get multi-modal route with fare & time |
+| GET | `/api/routing?start=LAT,LON&end=LAT,LON&engine=osrm|valhalla` | Query an OSRM/Valhalla routing backend if configured |
 | GET | `/api/feature?file=FILENAME&id=FEATURE_ID` | Get full GeoJSON Feature geometry |
 | GET | `/api/geojson` | List available GeoJSON files |
 | GET | `/api/geojson/:file` | Get specific GeoJSON FeatureCollection |
@@ -53,6 +54,17 @@ Server runs on `http://localhost:3000`
 | GET | `/api/admin/rules` | Get current fare rules |
 | POST | `/api/admin/rules` | Update fare rules (optional ADMIN_TOKEN) |
 | GET | `/api/deeplink?provider=...` | Deep-link to MC taxi providers |
+
+### Routing Engine Configuration
+
+Set `ROUTING_ENGINE_URL` to an OSRM or Valhalla backend endpoint to enable `/api/routing` and optional engine-aware planning. Example:
+
+```bash
+export ROUTING_ENGINE_URL=http://localhost:5000
+export ROUTING_ENGINE=osrm
+```
+
+When configured, `/api/plan` can also use `?engine=osrm` or `?engine=valhalla` to request the routing service.
 
 ### Test Endpoints
 
