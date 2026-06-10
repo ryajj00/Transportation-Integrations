@@ -6,7 +6,7 @@ Prerequisites
 - Node.js (v14+)
 - The Commuter backend running locally on port 3000.
 
-No Mapbox API key needed! Uses `react-native-maps`.
+No Mapbox API key needed! Uses Google Maps via `react-native-maps`.
 
 Quick start
 
@@ -36,5 +36,6 @@ Adjusting for your environment
 - If your backend is not on localhost:3000, update `BASE_URL` in `src/utils/featureFetcher.js`.
 
 Notes
-- Uses `react-native-maps`, which works on iOS, Android, and web via Expo.
+- Uses Google Maps via `react-native-maps` on iOS and Android.
+- Set your Google API keys in `app.json` under `ios.config.googleMapsApiKey` and `android.config.googleMaps.apiKey`.
 - No native compilation or native CLI needed—Expo handles everything.

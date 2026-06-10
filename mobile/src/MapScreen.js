@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Button, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import MapView, { Polyline, Marker } from 'react-native-maps';
+import React, { useState } from 'react';
+import { View, Button, Text, StyleSheet } from 'react-native';
+import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 
 import { fetchFeature } from './utils/featureFetcher';
 
@@ -34,7 +34,11 @@ export default function MapScreen() {
         {feature && <Text style={styles.label}>Feature: {feature.properties?.name}</Text>}
       </View>
 
-      <MapView style={styles.map} initialRegion={INITIAL_REGION}>
+      <MapView
+        provider={PROVIDER_GOOGLE}
+        style={styles.map}
+        initialRegion={INITIAL_REGION}
+      >
         {feature && feature.geometry && feature.geometry.type === 'LineString' && (
           <>
             <Polyline
