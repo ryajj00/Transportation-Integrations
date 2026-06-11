@@ -39,8 +39,6 @@ npm install
 npm start
 ```
 
-Server runs on `http://localhost:3000`
-
 ### Backend API Endpoints
 
 | Method | Endpoint | Description |
